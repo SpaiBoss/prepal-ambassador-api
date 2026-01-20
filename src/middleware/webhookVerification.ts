@@ -3,10 +3,17 @@ import pool from '../config/database.js';
 
 export const verifyWebhookSecret = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check for X-Security-Code header (Prepal format) or x-webhook-secret (legacy)
-    const providedSecret = (req.headers['x-security-code'] || req.headers['x-webhook-secret']) as string;
+    // Check for various possible header names for the secret
+    const providedSecret = (
+      req.headers['x-webhook-secret'] ||
+      req.headers['x-security-code'] ||
+      req.headers['authorization']
+    ) as string;
+
+    console.log('[Webhook Debug] Received Headers:', JSON.stringify(req.headers));
 
     if (!providedSecret) {
+      console.error('[Webhook Debug] No secret provided in headers');
       return res.status(401).json({ success: false, error: 'Webhook secret required' });
     }
 
@@ -28,8 +35,11 @@ export const verifyWebhookSecret = async (req: Request, res: Response, next: Nex
     }
 
     if (providedSecret !== storedSecret) {
+      console.error('[Webhook Debug] Secret mismatch. Provided:', providedSecret.substring(0, 4) + '***', 'Expected:', storedSecret.substring(0, 4) + '***');
       return res.status(401).json({ success: false, error: 'Invalid webhook secret' });
     }
+
+    console.log('[Webhook Debug] Secret verified successfully');
 
     next();
   } catch (error) {

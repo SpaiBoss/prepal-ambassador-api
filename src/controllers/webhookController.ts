@@ -19,6 +19,7 @@ export const handleNewStudent = async (
   const client = await pool.connect();
 
   try {
+    console.log('[Webhook Debug] Incoming Body:', JSON.stringify(req.body));
     // Support both Prepal format and legacy format
     let studentName: string;
     let studentEmail: string;
@@ -31,7 +32,7 @@ export const handleNewStudent = async (
     // Check if this is Prepal format (has 'name', 'email', 'referer', 'date')
     if ('name' in req.body && 'email' in req.body && 'referer' in req.body) {
       const prepalPayload = req.body as PrepalWebhookPayload;
-      
+
       // Validate Prepal required fields
       if (!prepalPayload.name || !prepalPayload.email || !prepalPayload.referer) {
         return res.status(400).json({
@@ -45,10 +46,10 @@ export const handleNewStudent = async (
       studentEmail = prepalPayload.email;
       referralCode = prepalPayload.referer;
       registeredAt = prepalPayload.date || new Date().toISOString();
-      
+
       // Generate studentId from email (hash for uniqueness)
       studentId = crypto.createHash('sha256').update(prepalPayload.email).digest('hex').substring(0, 32);
-      
+
       // Use defaults for plan and price (can be configured later)
       plan = 'Standard';
       price = 0;
@@ -103,6 +104,7 @@ export const handleNewStudent = async (
     );
 
     if (ambassadorResult.rows.length === 0) {
+      console.error('[Webhook Debug] No ambassador found for code:', referralCode);
       return res.status(404).json({
         success: false,
         error: 'Invalid referral code',
@@ -110,6 +112,7 @@ export const handleNewStudent = async (
     }
 
     const ambassador = ambassadorResult.rows[0];
+    console.log('[Webhook Debug] Ambassador found:', ambassador.name, '(ID:', ambassador.id, ')');
 
     // Check if ambassador is active
     if (ambassador.status !== 'active') {
