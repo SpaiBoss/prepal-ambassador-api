@@ -6,9 +6,6 @@
       "ES2020",
       "ESNext"
     ],
-    "types": [
-      "node"
-    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
