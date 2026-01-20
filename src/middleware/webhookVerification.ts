@@ -10,16 +10,22 @@ export const verifyWebhookSecret = async (req: Request, res: Response, next: Nex
       return res.status(401).json({ success: false, error: 'Webhook secret required' });
     }
 
-    // Get webhook secret from settings
-    const result = await pool.query(
-      "SELECT value FROM settings WHERE key = 'webhook_secret'"
-    );
+    // 1. Try environment variable first (preferred for Render)
+    let storedSecret = process.env.WEBHOOK_SECRET;
 
-    if (result.rows.length === 0) {
-      return res.status(500).json({ success: false, error: 'Webhook secret not configured' });
+    // 2. Fallback to database settings
+    if (!storedSecret) {
+      const result = await pool.query(
+        "SELECT value FROM settings WHERE key = 'webhook_secret'"
+      );
+      if (result.rows.length > 0) {
+        storedSecret = result.rows[0].value;
+      }
     }
 
-    const storedSecret = result.rows[0].value;
+    if (!storedSecret) {
+      return res.status(500).json({ success: false, error: 'Webhook secret not configured' });
+    }
 
     if (providedSecret !== storedSecret) {
       return res.status(401).json({ success: false, error: 'Invalid webhook secret' });

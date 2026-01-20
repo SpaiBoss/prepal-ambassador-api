@@ -12,7 +12,7 @@ const webhookLimiter = rateLimit({
   message: 'Too many webhook requests, please try again later.',
 });
 
-router.post('/new-student', webhookLimiter, verifyWebhookSecret, handleNewStudent);
+router.post('/referral', webhookLimiter, verifyWebhookSecret, handleNewStudent);
 
 export default router;
 
